@@ -3,12 +3,12 @@ require 'logger'
 module ThreadJob
   class ThreadPool
 
-    def initialize(max_size=5)
+    def initialize(max_size=5, logger=Logger.new(STDOUT))
       @queue = Queue.new
-      @logger = Logger.new(STDOUT)
+      @logger = logger
       @avail_pool = max_size.times.map do
         Thread.new do
-          @logger.info("[ThreadPool] started thread #{Thread.current}")
+          @logger.debug("[ThreadPool] started thread #{Thread.current}")
           while true
             monitor_queue
           end
@@ -20,22 +20,32 @@ module ThreadJob
 
     def has_available_thread?
       @mutex.synchronize {
-        @logger.info("[ThreadPool] #{@avail_pool.length} threads available, #{@use_pool.length} threads in use")
+        @logger.debug("[ThreadPool] #{@avail_pool.length} threads available, #{@use_pool.length} threads in use")
         return @avail_pool.length > 0
       }
     end
 
     def monitor_queue
-      blk = @queue.pop
-      if blk
+      work = @queue.pop
+      if work
         @mutex.synchronize {
           @use_pool.push(Thread.current)
           @avail_pool.delete(Thread.current)
         }
 
-        @logger.info("[ThreadPool] Running job on thread #{Thread.current}")
-        blk.call
-        @logger.info("[ThreadPool] Completed job on thread #{Thread.current}")
+        @logger.debug("[ThreadPool] Running job '#{work[:job_name]}' on thread #{Thread.current}")
+        begin
+          work[:job].run
+        rescue => e
+          @logger.error("[ThreadPool] Worker thread #{Thread.current} encountered an error #{e} while processing job '#{work[:job_name]}'")
+          work[:job_store].failed_job(work[:queue_name], work[:id])
+          @mutex.synchronize {
+            @avail_pool.push(Thread.current)
+            @use_pool.delete(Thread.current)
+          }
+          return
+        end
+        work[:job_store].complete_job(work[:queue_name], work[:id])
 
         @mutex.synchronize {
           @avail_pool.push(Thread.current)
@@ -44,8 +54,8 @@ module ThreadJob
       end
     end
 
-    def run(&blk)
-      @queue.push(blk)
+    def run(job_hash)
+      @queue.push(job_hash)
     end
   end
 end

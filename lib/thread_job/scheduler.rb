@@ -4,12 +4,12 @@ module ThreadJob
   class Scheduler
     attr_accessor :logger
 
-    def initialize(queue_name, job_store, sleep_delay=5, thread_pool_size=5)
+    def initialize(queue_name, job_store, poll_delay_seconds=5, thread_pool_size=5, logger=Logger.new(STDOUT))
       @job_store = job_store
-      @logger = Logger.new(STDOUT)
+      @logger = logger
       @queue_name = queue_name
-      @sleep_delay = sleep_delay
-      @thread_pool = ThreadPool.new(thread_pool_size)
+      @poll_delay = poll_delay_seconds
+      @thread_pool = ThreadPool.new(thread_pool_size, logger)
     end
 
     def start
@@ -19,27 +19,24 @@ module ThreadJob
     end
 
     def add_job(job_name, job)
-      @logger.info "[Scheduler] Added job: #{job_name} to the #{@queue_name} queue"
+      @logger.info("[Scheduler] Added job: '#{job_name}' to the '#{@queue_name}' queue")
       @job_store.save_job(@queue_name, job_name, job)
     end
 
     private
     def do_start
-      @logger.info '[Scheduler] starting...'
+      @logger.info("[Scheduler] starting...")
       while true
         if @thread_pool.has_available_thread?
           job_hash = @job_store.poll_for_job(@queue_name)
           if job_hash
-            @logger.info("[Scheduler] found #{job_hash[:job_name]}, sending to thread pool")
-            @thread_pool.run do
-              job_id = job_hash[:id]
-              queue_name = @queue_name
-              job_hash[:job].run
-              @job_store.complete_job(queue_name, job_id)
-            end
+            job_hash[:queue_name] = @queue_name
+            job_hash[:job_store] = @job_store
+            @logger.info("[Scheduler] scheudled job '#{job_hash[:job_name]}', sending to thread pool")
+            @thread_pool.run(job_hash)
           end
         end
-        sleep(@sleep_delay)
+        sleep(@poll_delay)
       end
     end
 
