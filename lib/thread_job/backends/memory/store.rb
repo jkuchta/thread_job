@@ -88,12 +88,13 @@ module ThreadJob
           if job
             job.status = FAILED
             job.attempts += 1
-            @logger.info("[MemoryStore] failed job: '#{job.job_name}' has been requeued and attempted #{job.attempts} times")
 
             if job.attempts == @max_retries
               @failed_jobs[queue_name].push(job)
               @jobs[queue_name].delete(job)
               @logger.warn("[MemoryStore] job: '#{job.job_name}' has failed the reached the maximum amount of retries (#{@max_retries}) and is being removed from the queue.")
+            else
+              @logger.info("[MemoryStore] failed job: '#{job.job_name}' has been requeued and attempted #{job.attempts} times")
             end
           end
         }
