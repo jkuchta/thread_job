@@ -2,9 +2,8 @@ require 'logger'
 
 module ThreadJob
   class Scheduler
-    attr_accessor :logger
 
-    def initialize(queue_name, job_store=ThreadJob::Memory::Store, poll_delay_seconds=5, thread_pool_size=5, logger=Logger.new(STDOUT))
+    def initialize(queue_name, job_store=ThreadJob::Memory::Store.new, poll_delay_seconds=5, thread_pool_size=5, logger=Logger.new(STDOUT))
       @job_store = job_store
       @logger = logger
       @queue_name = queue_name

@@ -40,6 +40,7 @@ module ThreadJob
       end
 
       def poll_for_job(queue_name)
+        @jobs[queue_name] ||= []
         @logger.debug("[MemoryStore] Polling for jobs, #{@jobs[queue_name].length} in the queue")
 
         @mutex.synchronize {
@@ -55,34 +56,44 @@ module ThreadJob
         return nil
       end
 
+      def get_job(queue_name, job_id)
+        found_job = false
+        if @jobs[queue_name] != nil
+          @jobs[queue_name].each do |job|
+            if job.id == job_id
+              found_job = true
+              return job
+            end
+          end
+        end
+
+        @logger.warn("[MemoryStore] unable to get job: #{job_id} from queue: #{queue_name}")
+
+        return nil
+      end
+
       def complete_job(queue_name, job_id)
         @mutex.synchronize {
-          if @jobs[queue_name] != nil
-            @jobs[queue_name].each do |job|
-              if job.id == job_id
-                @jobs[queue_name].delete(job)
-                @logger.info("[MemoryStore] job: '#{job.job_name}' has been completed and removed from the queue")
-              end
-            end
+          job = get_job(queue_name, job_id)
+          if job
+            @jobs[queue_name].delete(job)
+            @logger.info("[MemoryStore] job: '#{job.job_name}' has been completed and removed from the queue")
           end
         }
       end
 
-      def failed_job(queue_name, job_id)
+      def fail_job(queue_name, job_id)
         @mutex.synchronize {
-          if @jobs[queue_name] != nil
-            @jobs[queue_name].each do |job|
-              if job.id == job_id
-                job.status = FAILED
-                job.attempts += 1
-                @logger.info("[MemoryStore] failed job: '#{job.job_name}' has been requeued and attempted #{job.attempts} times")
+          job = get_job(queue_name, job_id)
+          if job
+            job.status = FAILED
+            job.attempts += 1
+            @logger.info("[MemoryStore] failed job: '#{job.job_name}' has been requeued and attempted #{job.attempts} times")
 
-                if job.attempts == @max_retries
-                  @failed_jobs[queue_name].push(job)
-                  @jobs[queue_name].delete(job)
-                  @logger.warn("[MemoryStore] job: '#{job.job_name}' has failed the reached the maximum amount of retries (#{@max_retries}) and is being removed from the queue.")
-                end
-              end
+            if job.attempts == @max_retries
+              @failed_jobs[queue_name].push(job)
+              @jobs[queue_name].delete(job)
+              @logger.warn("[MemoryStore] job: '#{job.job_name}' has failed the reached the maximum amount of retries (#{@max_retries}) and is being removed from the queue.")
             end
           end
         }

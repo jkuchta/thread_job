@@ -9,7 +9,7 @@ module ThreadJob
     def complete_job(queue_name, job_name)
     end
 
-    def failed_job(queue_name, job_name)
+    def fail_job(queue_name, job_name)
     end
   end
 end

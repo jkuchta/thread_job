@@ -38,7 +38,7 @@ module ThreadJob
           work[:job].run
         rescue => e
           @logger.error("[ThreadPool] Worker thread #{Thread.current} encountered an error #{e} while processing job '#{work[:job_name]}'")
-          work[:job_store].failed_job(work[:queue_name], work[:id])
+          work[:job_store].fail_job(work[:queue_name], work[:id])
           @mutex.synchronize {
             @avail_pool.push(Thread.current)
             @use_pool.delete(Thread.current)
