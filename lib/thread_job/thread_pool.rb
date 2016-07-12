@@ -25,6 +25,28 @@ module ThreadJob
       }
     end
 
+    def add_workers(num_workers)
+      num_workers.times do
+        thread = Thread.new do
+          @logger.debug("[ThreadPool] started thread #{Thread.current}")
+          while true
+            monitor_queue
+          end
+        end
+        @avail_pool.push(thread)
+      end
+    end
+
+    def kill
+      @avail_pool.each do |avail_thread|
+        avail_thread.kill
+      end
+
+      @use_pool.each do |used_thread|
+        used_thread.kill
+      end
+    end
+
     def monitor_queue
       work = @queue.pop
       if work

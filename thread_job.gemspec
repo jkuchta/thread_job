@@ -12,5 +12,6 @@ Gem::Specification.new do |spec|
   spec.require_paths  = ['lib']
   spec.summary        = 'Database-backed asynchronous queue'
   #spec.test_files     = Dir.glob('spec/**/*')
+  spec.add_development_dependency 'rspec'
   spec.version        = '0.0.0'
 end

@@ -8,18 +8,34 @@ module ThreadJob
       @logger = logger
       @queue_name = queue_name
       @poll_delay = poll_delay_seconds
+      @scheduler_thread = nil
       @thread_pool = ThreadPool.new(thread_pool_size, logger)
     end
 
     def start
-      return Thread.new do
+      return @scheduler_thread = Thread.new do
         do_start
       end
+    end
+
+    def kill
+      @logger.info("[Scheduler] scheduler stopping...")
+      @scheduler_thread.kill
+    end
+
+    def kill_workers
+      @logger.info("[Scheduler] Stopping all worker threads")
+      @thread_pool.kill
     end
 
     def add_job(job_name, job)
       @logger.info("[Scheduler] Added job: '#{job_name}' to the '#{@queue_name}' queue")
       @job_store.save_job(@queue_name, job_name, job)
+    end
+
+    def add_workers(num_workers)
+      @logger.info("[Scheduler] Adding #{num_workers} to the worker pool")
+      @thread_pool.add_workers(num_workers)
     end
 
     private

@@ -11,23 +11,7 @@ If you'd like to use thread_job with the built-in memory store add `thread_job` 
 gem 'thread_job'
 ```
 
-If you'd like to use thread_job with Active Record, add `thread_job_active_record` to your `Gemfile`.
-
-```ruby
-gem 'thread_job_active_record'
-```
-
 Run `bundle install` to install the gems.
-
-The Active Record backend requires a thread_jobs table. You can create that table by
-running the following command:
-
-    rails generate thread_job:active_record
-    rake db:migrate
-
-Rails 4.x
-=========
-TODO: Add some documentation here
 
 Scheduling Jobs
 ============
@@ -78,7 +62,7 @@ logger.sev_threshold = Logger::INFO
 backend = ThreadJob::Memory::Store.new(3, logger)
 
 # Create a scheduler using the customized backend, 2 second poll delay, and 8 worker threads
-scheduler = ThreadJob::Scheduler.new("default", backend, 2, 8, log)
+scheduler = ThreadJob::Scheduler.new("default", backend, 2, 8, logger)
 
 job = ExampleJob.new
 scheduler.add_job("First job", job)

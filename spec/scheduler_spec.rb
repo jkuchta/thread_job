@@ -10,7 +10,7 @@ describe ThreadJob::Scheduler do
   end
 
   describe '#add_job' do
-    context 'scheduler has not started' do
+    context 'when scheduler has not started' do
       let(:scheduler) { ThreadJob::Scheduler.new('default') }
 
       it 'adds a job to the job_store' do
@@ -29,7 +29,7 @@ describe ThreadJob::Scheduler do
     end
 
     # Use zero workers so that items are not being removed from queue in test
-    context 'scheduler has started but has no workers in thread pool' do
+    context 'when scheduler has started but has no workers in thread pool' do
       let(:scheduler) { ThreadJob::Scheduler.new('default', ThreadJob::Memory::Store.new, 2, 0) }
       before { scheduler.start }
 
@@ -54,6 +54,17 @@ describe ThreadJob::Scheduler do
     it 'starts new thread' do
       scheduler = ThreadJob::Scheduler.new("default")
       expect(scheduler.start.class).to eq(Thread)
+    end
+  end
+
+  describe '#kill' do
+    context 'when scheduler is running' do
+      let(:scheduler) { ThreadJob::Scheduler.new('default', ThreadJob::Memory::Store.new, 2, 0) }
+      before { scheduler.start }
+      it 'stops the thread' do
+        expect(scheduler.instance_variable_get(:@scheduler_thread)).to receive(:kill)
+        scheduler.kill
+      end
     end
   end
 end
