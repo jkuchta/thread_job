@@ -2,7 +2,7 @@
 
 ThreadJob
 ============
-ThreadJob provides asynchronous scheduling and executing of tasks (longer) in the background using a thread pool. In the future this can be distributed depending on the backend used (once ActiveRecord Store is complete).
+ThreadJob provides asynchronous scheduling and executing of tasks (longer) in the background using a thread pool. In the future, this can be distributed depending on the backend used (once ActiveRecord Store is complete).
 
 Installation
 ============
