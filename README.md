@@ -2,7 +2,7 @@
 
 ThreadJob
 ============
-ThreadJob provides asynchronous scheduling and executing of tasks (longer) in the background using a thread pool. This can be distributed depending on the backend used.
+ThreadJob provides asynchronous scheduling and executing of tasks (longer) in the background using a thread pool. In the future this can be distributed depending on the backend used (once ActiveRecord Store is complete).
 
 Installation
 ============
@@ -17,6 +17,8 @@ Scheduling Jobs
 ============
 ## Basic Example
 ```ruby
+require "thread_job"
+
 # Jobs inherit from ThreadJob::Job and must implement a run method that is executed when the job is run
 class ExampleJob < ThreadJob::Job
   def run
@@ -34,6 +36,12 @@ scheduler.start
 
 # Add a job while scheduler is running
 scheduler.add_job("Second job", job)
+
+# Keep our example running
+while true do
+  puts "Just keeping our example alive..."
+  sleep 5
+end
 ```
 
 ## Parameters
@@ -47,6 +55,8 @@ A backend store optionally takes **max retries** (max number of times to attempt
 
 ### Example with parameters
 ```ruby
+require "thread_job"
+
 # Jobs inherit from ThreadJob::Job and must implement a run method that is executed when the job is run
 class ExampleJob < ThreadJob::Job
   def run
@@ -72,4 +82,10 @@ scheduler.start
 
 # Add a job while scheduler is running
 scheduler.add_job("Second job", job)
+
+# Keep our example running
+while true do
+  puts "Just keeping our example alive..."
+  sleep 5
+end
 ```
